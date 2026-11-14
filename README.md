@@ -78,6 +78,21 @@ toolchain. To build offline or against your own build of the library:
 dotnet build -p:RelateNativeLibraryPath=C:\path\to\relate_ffi.dll
 ```
 
+## Releasing
+
+CI (`.github/workflows/ci.yml`) builds and tests every push and pull request. To publish a version
+to nuget.org, push a tag:
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The tag sets the package version (`v1.2.3-beta.1` becomes `1.2.3-beta.1`). After the tests pass,
+the `publish` job pushes the `.nupkg` and the `.snupkg` symbol package using the `NUGET_API_KEY`
+repository secret. To require a manual approval for each release, add required reviewers to the
+`nuget` environment under *Settings → Environments*.
+
 ## Repository layout
 
 | Path | Contents |

@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [master]
+    tags: ['v*']          # pushing a tag like v1.0.0 also publishes to nuget.org
   pull_request:
   workflow_dispatch:
 
@@ -11,7 +12,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 env:
   DOTNET_NOLOGO: true
@@ -36,6 +37,25 @@ jobs:
             8.0.x
             10.0.x
 
+      # On a v* tag the package version comes from the tag (v1.2.3 -> 1.2.3, v1.2.3-beta.1 -> 1.2.3-beta.1);
+      # otherwise the version in Relate.Net.csproj is used.
+      - name: Determine package version
+        id: version
+        shell: pwsh
+        run: |
+          $ref = '${{ github.ref }}'
+          if ($ref -like 'refs/tags/v*') {
+            $version = $ref.Substring('refs/tags/v'.Length)
+            if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+              throw "Tag 'v$version' is not a valid semantic version (expected v<major>.<minor>.<patch>[-prerelease])."
+            }
+            "args=-p:Version=$version" >> $env:GITHUB_OUTPUT
+            "version=$version" >> $env:GITHUB_OUTPUT
+          } else {
+            "args=" >> $env:GITHUB_OUTPUT
+            "version=" >> $env:GITHUB_OUTPUT
+          }
+
       # relate_ffi.dll is downloaded and SHA-256 verified by build/RelateNative.targets;
       # cache it per pinned version + hash so most runs skip the 74 MB download.
       - name: Cache relate native library
@@ -48,7 +68,7 @@ jobs:
         run: dotnet restore Relate.Net.sln
 
       - name: Build
-        run: dotnet build Relate.Net.sln --configuration Release --no-restore
+        run: dotnet build Relate.Net.sln --configuration Release --no-restore ${{ steps.version.outputs.args }}
 
       - name: Test
         run: >
@@ -65,11 +85,57 @@ jobs:
           if-no-files-found: warn
 
       - name: Pack
-        run: dotnet pack src/Relate.Net/Relate.Net.csproj --configuration Release --no-build --output artifacts
+        run: dotnet pack src/Relate.Net/Relate.Net.csproj --configuration Release --no-build --output artifacts ${{ steps.version.outputs.args }}
+
+      - name: Verify package version matches tag
+        if: steps.version.outputs.version != ''
+        shell: pwsh
+        run: |
+          $expected = "artifacts/Relate.Net.${{ steps.version.outputs.version }}.nupkg"
+          if (-not (Test-Path $expected)) { Get-ChildItem artifacts; throw "Expected $expected" }
 
       - name: Upload NuGet package
         uses: actions/upload-artifact@v4
         with:
           name: nuget-package
-          path: artifacts/*.nupkg
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
           if-no-files-found: error
+
+  publish:
+    name: Publish to nuget.org
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    # Optionally add required reviewers to the "nuget" environment (Settings -> Environments)
+    # to approve each release by hand.
+    environment:
+      name: nuget
+      url: https://www.nuget.org/packages/Relate.Net
+
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::The NUGET_API_KEY secret is not set (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+          # The matching .snupkg next to each .nupkg is pushed to the symbol server automatically.
+          dotnet nuget push "artifacts/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
