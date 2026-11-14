@@ -98,7 +98,8 @@ One-time setup:
 1. On nuget.org, under *your profile → Trusted Publishing*, add a policy with
    Repository Owner `peter-villadsen`, Repository `relate.NET`, Workflow File `ci.yml` and
    Environment `nuget`.
-2. Add a repository secret `NUGET_USER` that holds your nuget.org **profile name** (not your email).
+2. The nuget.org profile that owns the policy (`pvillads`) is set as `user:` in the workflow's
+   `NuGet/login` step. Change it there if the package moves to another owner.
 3. Optional: add required reviewers to the `nuget` environment under *Settings → Environments* to
    approve each release by hand.
 

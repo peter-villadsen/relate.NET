@@ -129,21 +129,13 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      # Trusted Publishing: no stored API key. NUGET_USER is the nuget.org profile name (not the email).
-      - name: Check NUGET_USER secret
-        env:
-          NUGET_USER: ${{ secrets.NUGET_USER }}
-        run: |
-          if [ -z "$NUGET_USER" ]; then
-            echo "::error::The NUGET_USER secret (your nuget.org profile name) is not set (Settings -> Secrets and variables -> Actions)."
-            exit 1
-          fi
-
+      # Trusted Publishing: no stored API key. `user` is the (public) nuget.org profile name
+      # that owns the Trusted Publishing policy, not an email address.
       - name: NuGet login (OIDC -> temporary API key)
         id: login
         uses: NuGet/login@v1
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: pvillads
 
       # The temporary key is valid for 1 hour. The matching .snupkg next to each
       # .nupkg is pushed to the symbol server automatically.
