@@ -1,5 +1,7 @@
 # Relate.Net
 
+[![CI](https://github.com/peter-villadsen/relate.NET/actions/workflows/ci.yml/badge.svg)](https://github.com/peter-villadsen/relate.NET/actions/workflows/ci.yml)
+
 An idiomatic .NET wrapper for [**Relate**](https://github.com/relatedb/relate), the embedded,
 in-process property-graph database with a Cypher query language and Neo4j compatibility.
 
