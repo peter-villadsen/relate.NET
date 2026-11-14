@@ -89,9 +89,18 @@ git push origin v1.0.0
 ```
 
 The tag sets the package version (`v1.2.3-beta.1` becomes `1.2.3-beta.1`). After the tests pass,
-the `publish` job pushes the `.nupkg` and the `.snupkg` symbol package using the `NUGET_API_KEY`
-repository secret. To require a manual approval for each release, add required reviewers to the
-`nuget` environment under *Settings → Environments*.
+the `publish` job pushes the `.nupkg` and the `.snupkg` symbol package using
+[nuget.org Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing).
+GitHub's OIDC token is exchanged for a one-hour API key, so no long-lived key is stored.
+
+One-time setup:
+
+1. On nuget.org, under *your profile → Trusted Publishing*, add a policy with
+   Repository Owner `peter-villadsen`, Repository `relate.NET`, Workflow File `ci.yml` and
+   Environment `nuget`.
+2. Add a repository secret `NUGET_USER` that holds your nuget.org **profile name** (not your email).
+3. Optional: add required reviewers to the `nuget` environment under *Settings → Environments* to
+   approve each release by hand.
 
 ## Repository layout
 
