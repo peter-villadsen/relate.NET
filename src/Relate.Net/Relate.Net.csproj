@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Relate.Net</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- NuGet package -->
+    <PackageId>Relate.Net</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Idiomatic .NET wrapper for Relate, the embedded property-graph database with a Cypher query language. Bundles the relate $(RelateNativeVersion) native library for Windows x64.</Description>
+    <PackageTags>relate;graph;database;cypher;neo4j;embedded</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/relatedb/relate</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(RepoRoot)README.md" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(RepoRoot)LICENSE" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(RepoRoot)THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(RepoRoot)docs\UserGuide.md" Pack="true" PackagePath="docs" Visible="false" />
+  </ItemGroup>
+
+  <Import Project="$(RepoRoot)build\RelateNative.targets" />
+
+</Project>

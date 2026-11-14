@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+artifacts/
+*.nupkg
+*.snupkg
+
+# relate native library: downloaded and hash-verified at build time (build/RelateNative.targets)
+native/
+
+# Tooling
+.vs/
+.vscode/
+.idea/
+*.user
+TestResults/

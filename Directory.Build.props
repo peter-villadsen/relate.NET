@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+
+    <Authors>Peter Villadsen</Authors>
+    <Copyright>Copyright (c) 2026 Peter Villadsen</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- The relate native library (relate_ffi.dll) this wrapper is built against. -->
+    <RelateNativeVersion>1.0.1</RelateNativeVersion>
+    <RelateNativeSha256>ab0e33e512a9ce3c2114be997d91ebbeff314dc4351eeb4b59f89c8642f38650</RelateNativeSha256>
+  </PropertyGroup>
+</Project>

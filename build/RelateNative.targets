@@ -1,0 +1,49 @@
+<Project>
+  <!--
+    Acquires the prebuilt relate C FFI library (relate_ffi.dll, Windows x64) from the
+    official relate GitHub release, verifies its SHA-256 and extracts it under
+    native/<version>/win-x64/. The download happens once; later builds reuse it.
+
+    To build offline, or against a locally built relate_ffi.dll, pass
+      -p:RelateNativeLibraryPath=C:\path\to\relate_ffi.dll
+  -->
+  <PropertyGroup>
+    <RelateNativeArchiveName>relate-ffi-x86_64-pc-windows-msvc.tar.gz</RelateNativeArchiveName>
+    <RelateNativeUrl>https://github.com/relatedb/relate/releases/download/v$(RelateNativeVersion)/$(RelateNativeArchiveName)</RelateNativeUrl>
+    <RelateNativeRoot>$(RepoRoot)native\$(RelateNativeVersion)\</RelateNativeRoot>
+    <RelateNativeDir>$(RelateNativeRoot)win-x64\</RelateNativeDir>
+    <_RelateUseDownloadedLibrary Condition="'$(RelateNativeLibraryPath)' == ''">true</_RelateUseDownloadedLibrary>
+    <RelateNativeLibraryPath Condition="'$(RelateNativeLibraryPath)' == ''">$(RelateNativeDir)relate_ffi.dll</RelateNativeLibraryPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Copied next to the assembly for project references / tests, packed under runtimes/win-x64/native. -->
+    <None Include="$(RelateNativeLibraryPath)"
+          Link="relate_ffi.dll"
+          CopyToOutputDirectory="PreserveNewest"
+          Visible="false"
+          Pack="true"
+          PackagePath="runtimes/win-x64/native/" />
+  </ItemGroup>
+
+  <Target Name="AcquireRelateNative"
+          BeforeTargets="PrepareForBuild;_GetPackageFiles"
+          Condition="'$(_RelateUseDownloadedLibrary)' == 'true' And !Exists('$(RelateNativeLibraryPath)')">
+
+    <Message Importance="high" Text="Downloading relate native library v$(RelateNativeVersion) from $(RelateNativeUrl)" />
+    <DownloadFile SourceUrl="$(RelateNativeUrl)" DestinationFolder="$(RelateNativeRoot)" Retries="3" />
+
+    <GetFileHash Files="$(RelateNativeRoot)$(RelateNativeArchiveName)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_RelateArchiveHash" />
+    </GetFileHash>
+    <Delete Files="$(RelateNativeRoot)$(RelateNativeArchiveName)" Condition="'$(_RelateArchiveHash)' != '$(RelateNativeSha256)'" />
+    <Error Condition="'$(_RelateArchiveHash)' != '$(RelateNativeSha256)'"
+           Text="SHA-256 mismatch for $(RelateNativeArchiveName): expected $(RelateNativeSha256), got $(_RelateArchiveHash)." />
+
+    <MakeDir Directories="$(RelateNativeDir)" />
+    <!-- Use Windows' bsdtar explicitly: a GNU tar earlier on PATH (Git Bash) misreads 'C:' paths. -->
+    <Exec Command="&quot;$(SystemRoot)\System32\tar.exe&quot; -xzf &quot;$(RelateNativeArchiveName)&quot; -C win-x64 ./relate_ffi.dll ./include/relate.h"
+          WorkingDirectory="$(RelateNativeRoot)" />
+    <Delete Files="$(RelateNativeRoot)$(RelateNativeArchiveName)" />
+  </Target>
+</Project>
